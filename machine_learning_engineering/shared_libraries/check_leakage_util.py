@@ -75,6 +75,8 @@ def update_extract_status(
         suffix=suffix,
     )
     code = callback_context.state.get(code_state_key, "")
+    # following line inserted
+    leakage_status = ""
     if "No Data Leakage" in response_text:
         leakage_status = "No Data Leakage"
     try:
@@ -180,6 +182,13 @@ def check_data_leakage(
     leakage_status = callback_context.state.get(leakage_status_key, "")
     skip_flag = callback_context.state.get(skip_data_leakage_check_key, False)
     if skip_flag or ("Yes Data Leakage" not in leakage_status):
+        # Bug fix:
+        if not skip_flag:
+            # No leakage found: the refine model call (and its
+            # after_model_callback replace_leakage_code, which is the only
+            # place that calls evaluate_code) is about to be skipped, so the
+            # existing code would otherwise never get executed/scored.
+            code_util.evaluate_code(callback_context=callback_context)
         return llm_response_module.LlmResponse()
     return None
 
@@ -236,7 +245,10 @@ def get_data_leakage_checker_agent(
             check_data_leakage,
             prefix=prefix,
         ),
-        after_model_callback=replace_leakage_code,
+        after_model_callback=functools.partial(
+            replace_leakage_code,
+            prefix=prefix,
+        ),
         generate_content_config=types.GenerateContentConfig(
             temperature=0.0,
         ),
