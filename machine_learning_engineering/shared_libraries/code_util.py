@@ -241,7 +241,10 @@ def evaluate_code(
     ):
         workspace_dir = callback_context.state.get("workspace_dir", "")
         task_name = callback_context.state.get("task_name", "")
-        run_cwd = os.path.join(workspace_dir, task_name, task_id)
+        # added this to ensure unique workspace names
+        config_path = os.environ.get("MLE_STAR_CONFIG_PATH")
+        config_name = os.path.splitext(os.path.basename(config_path))[0] if config_path else "no_config"
+        run_cwd = os.path.join(workspace_dir, task_name, config_name, task_id)
         result_dict = run_python_code(
             code_text=raw_code,
             run_cwd=run_cwd,

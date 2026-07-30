@@ -36,9 +36,12 @@ def update_outer_loop_states(
     step = callback_context.state.get(f"refine_step_{task_id}", 0)
     workspace_dir = callback_context.state.get("workspace_dir", "")
     task_name = callback_context.state.get("task_name", "")
+    # added this to ensure unique workspace names
+    config_path = os.environ.get("MLE_STAR_CONFIG_PATH")
+    config_name = os.path.splitext(os.path.basename(config_path))[0] if config_path else "no_config"
     lower = callback_context.state.get("lower", True)
     inner_loop_round = callback_context.state.get("inner_loop_round", 2)
-    run_cwd = os.path.join(workspace_dir, task_name, task_id)
+    run_cwd = os.path.join(workspace_dir, task_name, config_name, task_id)
     prev_solution = callback_context.state.get(
         f"train_code_{step}_{task_id}", ""
     )

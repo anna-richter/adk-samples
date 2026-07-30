@@ -155,19 +155,22 @@ def create_workspace(
     data_dir = callback_context.state.get("data_dir", "")
     workspace_dir = callback_context.state.get("workspace_dir", "")
     task_name = callback_context.state.get("task_name", "")
-    run_cwd = os.path.join(workspace_dir, task_name, "ensemble")
+    # added this to ensure unique workspace names
+    config_path = os.environ.get("MLE_STAR_CONFIG_PATH")
+    config_name = os.path.splitext(os.path.basename(config_path))[0] if config_path else "no_config"
+    run_cwd = os.path.join(workspace_dir, task_name, config_name, "ensemble")
     if os.path.exists(run_cwd):
         shutil.rmtree(run_cwd)
     # make required directories
     os.makedirs(
-        os.path.join(workspace_dir, task_name, "ensemble"), exist_ok=True
+        os.path.join(workspace_dir, task_name, config_name, "ensemble"), exist_ok=True
     )
     os.makedirs(
-        os.path.join(workspace_dir, task_name, "ensemble", "input"),
+        os.path.join(workspace_dir, task_name, config_name, "ensemble", "input"),
         exist_ok=True,
     )
     os.makedirs(
-        os.path.join(workspace_dir, task_name, "ensemble", "final"),
+        os.path.join(workspace_dir, task_name, config_name, "ensemble", "final"),
         exist_ok=True,
     )
     # copy files to input directory
@@ -177,13 +180,13 @@ def create_workspace(
             shutil.copytree(
                 os.path.join(data_dir, task_name, file),
                 os.path.join(
-                    workspace_dir, task_name, "ensemble", "input", file
+                    workspace_dir, task_name, config_name, "ensemble", "input", file
                 ),
             )
         elif "answer" not in file:
             common_util.copy_file(
                 os.path.join(data_dir, task_name, file),
-                os.path.join(workspace_dir, task_name, "ensemble", "input"),
+                os.path.join(workspace_dir, task_name, config_name, "ensemble", "input"),
             )
     return None
 

@@ -42,7 +42,10 @@ def save_state(
     """Prints the current state of the callback context."""
     workspace_dir = callback_context.state.get("workspace_dir", "")
     task_name = callback_context.state.get("task_name", "")
-    run_cwd = os.path.join(workspace_dir, task_name)
+    # added this to ensure unique workspace names
+    config_path = os.environ.get("MLE_STAR_CONFIG_PATH")
+    config_name = os.path.splitext(os.path.basename(config_path))[0] if config_path else "no_config"
+    run_cwd = os.path.join(workspace_dir, task_name, config_name)
     with open(os.path.join(run_cwd, "final_state.json"), "w") as f:
         json.dump(callback_context.state.to_dict(), f, indent=2)
     return None
