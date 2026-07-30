@@ -40,4 +40,21 @@ class DefaultConfig:
     use_data_usage_checker: bool = False  # Enable (`True`) or disable (`False`) a check for how data is being used, potentially for compliance or best practices.
 
 
-CONFIG = DefaultConfig()
+# set config path as and environment variable to make sure each individual run has
+# a unique task name and one can run ablation studies changing subparts of the config
+# export MLE_STAR_CONFIG_PATH=./configs/skin_melanoma_x.json
+# adk run machine_learning_engineer
+# alternatively pass it directly 
+# MLE_STAR_CONFIG_PATH=./configs/skin-melanoma.json adk run machine_learning_engineering
+import json
+
+def _load_config() -> DefaultConfig:
+    config_path = os.environ.get("MLE_STAR_CONFIG_PATH")
+    if not config_path:
+        return DefaultConfig()
+    with open(config_path) as f:
+        overrides = json.load(f)
+    return dataclasses.replace(DefaultConfig(), **overrides)
+
+CONFIG = _load_config()
+
