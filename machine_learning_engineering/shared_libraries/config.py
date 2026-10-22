@@ -38,6 +38,9 @@ class DefaultConfig:
     num_top_plans: int = 2  # The number of highest-scoring plans or strategies to select or retain.
     use_data_leakage_checker: bool = False  # Enable (`True`) or disable (`False`) a check for data leakage in the machine learning pipeline.
     use_data_usage_checker: bool = False  # Enable (`True`) or disable (`False`) a check for how data is being used, potentially for compliance or best practices.
+    retry_attempts: int = 8  # The maximum number of attempts per LLM request (including the first) on transient errors such as 429 RESOURCE_EXHAUSTED.
+    retry_initial_delay: float = 2.0  # The delay in seconds before the first LLM request retry, growing exponentially afterwards.
+    retry_max_delay: float = 60.0  # The maximum delay in seconds between two LLM request retries.
 
 
 # set config path as and environment variable to make sure each individual run has
@@ -57,4 +60,23 @@ def _load_config() -> DefaultConfig:
     return dataclasses.replace(DefaultConfig(), **overrides)
 
 CONFIG = _load_config()
+
+
+# retry LLM requests on transient errors (e.g. 429 RESOURCE_EXHAUSTED), see
+# https://adk.dev/agents/models/google-gemini/#error-code-429-resource_exhausted
+# registering a Gemini subclass makes every agent that passes its model as a
+# "gemini-*" string use it, so no agent definition needs to change
+from google.adk.models import Gemini, LLMRegistry
+from google.genai import types
+
+
+class _RetryingGemini(Gemini):
+    retry_options: types.HttpRetryOptions | None = types.HttpRetryOptions(
+        attempts=CONFIG.retry_attempts,
+        initial_delay=CONFIG.retry_initial_delay,
+        max_delay=CONFIG.retry_max_delay,
+    )
+
+
+LLMRegistry.register(_RetryingGemini)
 
